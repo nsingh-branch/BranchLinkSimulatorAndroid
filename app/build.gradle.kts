@@ -11,8 +11,8 @@ android {
         applicationId = "io.branch.branchlinksimulator"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 12
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -59,6 +59,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.navigation:navigation-runtime-ktx:2.7.7")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
@@ -66,8 +67,9 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    implementation("io.branch.sdk.android:library:5.8.2")
+    implementation("io.branch.sdk.android:library:5.9.0")
     implementation("com.google.android.gms:play-services-ads-identifier:18.0.1")
     implementation("com.android.installreferrer:installreferrer:2.2")
 }

@@ -9,6 +9,7 @@ class BranchLinkSimulatorApplication: Application() {
 
         // Branch logging for debugging
         Branch.enableLogging()
+        //Branch.getInstance().setIdentity("test_user")
 
         // Branch object initialization
         Branch.getAutoInstance(this)
