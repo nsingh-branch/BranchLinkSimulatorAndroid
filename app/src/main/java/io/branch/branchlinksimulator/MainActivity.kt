@@ -63,6 +63,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.unit.sp
 import io.branch.referral.PrefHelper
+import java.util.UUID
 
 var customerEventAlias = "alias"
 
@@ -151,9 +152,16 @@ fun MainContent(navController: NavController) {
     val context = LocalContext.current
     var showAPIDialog by remember { mutableStateOf(false) }
     var showAliasDialog by remember { mutableStateOf(false) }
+    var showSessionIdDialog by remember { mutableStateOf(false) }
 
     var textFieldValue by remember { mutableStateOf(PrefHelper.getInstance(context).apiBaseUrl) }
     var aliasValue by remember { mutableStateOf("") }
+
+    val sharedPreferences = context.getSharedPreferences("branch_session_prefs", Context.MODE_PRIVATE)
+    val blsSessionId = sharedPreferences.getString("bls_session_id", null) ?: UUID.randomUUID().toString().also {
+        sharedPreferences.edit().putString("bls_session_id", it).apply()
+    }
+    var sessionIdValue by remember { mutableStateOf(blsSessionId) }
 
     Column(modifier = Modifier.padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -182,6 +190,10 @@ fun MainContent(navController: NavController) {
 
         RoundedButton(title = "Set Customer Event Alias", icon = R.drawable.badge) {
             showAliasDialog = true
+        }
+
+        RoundedButton(title = "Change App's Session ID", icon = R.drawable.branch_badge_all_white) {
+            showSessionIdDialog = true
         }
 
         if (showAPIDialog) {
@@ -223,6 +235,32 @@ fun MainContent(navController: NavController) {
                         customerEventAlias = aliasValue
                         Toast.makeText(context, "Set Customer Event Alias to $aliasValue", Toast.LENGTH_SHORT).show()
                         showAliasDialog = false
+                    }) {
+                        Text("Save")
+                    }
+                }
+            )
+        }
+
+        if (showSessionIdDialog) {
+
+            AlertDialog(
+                onDismissRequest = { showSessionIdDialog = false },
+                title = { Text("Enter A Session ID") },
+                text = {
+                    TextField(
+                        value = sessionIdValue,
+                        onValueChange = { sessionIdValue = it },
+                        label = { Text("Ex. testingSession02") },
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        Branch.getInstance().setRequestMetadata("bls_session_id", sessionIdValue)
+                        sharedPreferences.edit().putString("bls_session_id", sessionIdValue).apply()
+
+                        Toast.makeText(context, "Set App's Session ID to $sessionIdValue", Toast.LENGTH_SHORT).show()
+                        showSessionIdDialog = false
                     }) {
                         Text("Save")
                     }
