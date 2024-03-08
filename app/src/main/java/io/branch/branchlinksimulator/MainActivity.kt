@@ -65,7 +65,8 @@ import androidx.compose.ui.unit.sp
 import io.branch.referral.PrefHelper
 import java.util.UUID
 
-var customerEventAlias = "alias"
+var customerEventAlias = ""
+var sessionID = ""
 
 class MainActivity : ComponentActivity() {
     private var navController: NavHostController? = null
@@ -155,13 +156,19 @@ fun MainContent(navController: NavController) {
     var showSessionIdDialog by remember { mutableStateOf(false) }
 
     var textFieldValue by remember { mutableStateOf(PrefHelper.getInstance(context).apiBaseUrl) }
-    var aliasValue by remember { mutableStateOf("") }
 
     val sharedPreferences = context.getSharedPreferences("branch_session_prefs", Context.MODE_PRIVATE)
     val blsSessionId = sharedPreferences.getString("bls_session_id", null) ?: UUID.randomUUID().toString().also {
         sharedPreferences.edit().putString("bls_session_id", it).apply()
     }
+    sessionID = blsSessionId
     var sessionIdValue by remember { mutableStateOf(blsSessionId) }
+
+    val savedAlias = sharedPreferences.getString("customer_event_alias", null) ?: "".also {
+        sharedPreferences.edit().putString("customer_event_alias", it).apply()
+    }
+    customerEventAlias = savedAlias
+    var aliasValue by remember { mutableStateOf(savedAlias) }
 
     Column(modifier = Modifier.padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -232,6 +239,7 @@ fun MainContent(navController: NavController) {
                 },
                 confirmButton = {
                     TextButton(onClick = {
+                        sharedPreferences.edit().putString("customer_event_alias", aliasValue).apply()
                         customerEventAlias = aliasValue
                         Toast.makeText(context, "Set Customer Event Alias to $aliasValue", Toast.LENGTH_SHORT).show()
                         showAliasDialog = false
@@ -301,12 +309,46 @@ fun ButtonRow(navController: NavController, modifier: Modifier = Modifier) {
 
 @Composable
 fun FunctionButtonRow(modifier: Modifier = Modifier, context: android.content.Context) {
+    val showDialog = remember { mutableStateOf(false) }
+
+    fun sendEvent(eventType: String) {
+        when (eventType) {
+            "Purchase" -> sendStandardEvent(context, BRANCH_STANDARD_EVENT.PURCHASE)
+            "Add to Cart" -> sendStandardEvent(context, BRANCH_STANDARD_EVENT.ADD_TO_CART)
+            "Login" -> sendStandardEvent(context, BRANCH_STANDARD_EVENT.LOGIN)
+            "Search" -> sendStandardEvent(context, BRANCH_STANDARD_EVENT.SEARCH)
+            "Share" -> sendStandardEvent(context, BRANCH_STANDARD_EVENT.SHARE)
+        }
+        showDialog.value = false
+    }
+
     Column(modifier = modifier) {
         RoundedButton(
             title = "Send Standard Event",
             icon = R.drawable.send
         )
-        { sendStandardEvent(context) }
+        { showDialog.value = true }
+        if (showDialog.value) {
+            // Dialog with event options
+            AlertDialog(
+                onDismissRequest = { showDialog.value = false },
+                title = { Text("Choose Event Type") },
+                text = {
+                    Column {
+                        Button(onClick = { sendEvent("Purchase") }) { Text("Purchase") }
+                        Button(onClick = { sendEvent("Add to Cart") }) { Text("Add to Cart") }
+                        Button(onClick = { sendEvent("Login") }) { Text("Login") }
+                        Button(onClick = { sendEvent("Search") }) { Text("Search") }
+                        Button(onClick = { sendEvent("Share") }) { Text("Share") }
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = { showDialog.value = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
 
         RoundedButton(
             title = "Send Custom Event",
@@ -316,10 +358,13 @@ fun FunctionButtonRow(modifier: Modifier = Modifier, context: android.content.Co
     }
 }
 
-fun sendStandardEvent(context: android.content.Context) {
-    BranchEvent(BRANCH_STANDARD_EVENT.SEARCH).setCustomerEventAlias(customerEventAlias).logEvent(context, object : BranchLogEventCallback {
+fun sendStandardEvent(context: Context, event: BRANCH_STANDARD_EVENT) {
+    BranchEvent(event)
+        .setCustomerEventAlias(customerEventAlias)
+        .addCustomDataProperty("bls_session_id", sessionID)
+        .logEvent(context, object : BranchLogEventCallback {
         override fun onSuccess(responseCode: Int) {
-            Toast.makeText(context, "Sent Standard Event!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Sent ${event.getName()} Event!", Toast.LENGTH_SHORT).show()
         }
 
         override fun onFailure(e: Exception) {
@@ -328,7 +373,10 @@ fun sendStandardEvent(context: android.content.Context) {
     })
 }
 fun sendCustomEvent(context: android.content.Context) {
-    BranchEvent("My Custom Event").setCustomerEventAlias(customerEventAlias).logEvent(context, object : BranchLogEventCallback {
+    BranchEvent("My Custom Event")
+        .setCustomerEventAlias(customerEventAlias)
+        .addCustomDataProperty("bls_session_id", sessionID)
+        .logEvent(context, object : BranchLogEventCallback {
         override fun onSuccess(responseCode: Int) {
             Toast.makeText(context, "Sent Custom Event!", Toast.LENGTH_SHORT).show()
         }

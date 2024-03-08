@@ -11,7 +11,7 @@ class BranchLinkSimulatorApplication: Application() {
 
         // Branch logging for debugging
         Branch.enableLogging()
-        Branch.setAPIUrl("https://protected-api-test.branch.io/")
+        Branch.setAPIUrl("https://protected-api.branch.io/")
 
         // Branch object initialization
         Branch.getAutoInstance(this)
